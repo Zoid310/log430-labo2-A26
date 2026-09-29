@@ -37,11 +37,21 @@ def get_orders_from_redis(limit=9999):
     return orders
 
 def get_highest_spending_users():
-    # TODO: écrivez la méthode
-    # triez le résultat par nombre de commandes (ordre décroissant)
+    """Get report of highest spending users"""
+    orders = get_orders_from_redis()
     expenses_by_user = defaultdict(float)
+    for order in orders:
+        expenses_by_user[order.user_id] += order.total_amount
+    highest_spending_users = sorted(expenses_by_user.items(), key=lambda x: x[1], reverse=True)
 
-    return []
+    return highest_spending_users[:10]  # Return top 10 highest spending users
 
 def get_most_ordered_products():
     """Get report of best selling products"""
+    r = get_redis_conn()
+    products = []
+    for key in r.keys("product:*"):
+        product_id = int(key.split(":")[1])
+        quantity = int(r.get(key))
+        products.append((product_id, quantity))
+    return sorted(products, key=lambda item: item[1], reverse=True)

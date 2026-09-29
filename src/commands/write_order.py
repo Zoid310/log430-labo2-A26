@@ -106,6 +106,8 @@ def add_order_to_redis(order_id, user_id, total_amount, items):
         "total_amount": total_amount
     })
     print(r)
+    for item in items:
+        r.incr(f"product:{int(item['product_id'])}", int(float(item['quantity'])))
 
 def delete_order_from_redis(order_id):
     """Delete order from Redis"""
@@ -124,13 +126,14 @@ def sync_all_orders_to_redis():
             # mysql
             orders_from_mysql = get_orders_from_mysql()
             for order in orders_from_mysql:
-                # TODO: terminez l'implementation
                 r.hset(f"order:{order.id}", 
                     mapping={
                         "id": order.id,
                         "user_id": order.user_id,
                         "total_amount": float(order.total_amount)
                 })
+                for item in order.order_items:
+                    r.incr(f"product:{item.product_id}", int(float(item.quantity)))
                 print(order)
             rows_added = len(orders_from_mysql)
         else:

@@ -31,3 +31,20 @@ def list_products(limit):
     except Exception as e:
         print(e)
         return "Une erreur s'est produite lors de la requête de base de données. Veuillez consulter les logs pour plus d'informations."
+
+def get_product_by_id(product_id):
+    """Get product by ID, use ReadProduct model"""
+    try:
+        products = get_products(limit=9999)
+        for product in products:
+            if product.id == product_id:
+                return {
+                    "id": product.id,
+                    "name": product.name,
+                    "sku": product.sku,
+                    "price": float(product.price)
+                }
+        return None
+    except Exception as e:
+        print(e)
+        return "Une erreur s'est produite lors de la requête de base de données. Veuillez consulter les logs pour plus d'informations."

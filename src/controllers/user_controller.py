@@ -4,7 +4,7 @@ SPDX - License - Identifier: LGPL - 3.0 - or -later
 Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 """
 from commands.write_user import add_user, delete_user_by_id
-from queries.read_user import get_users
+from queries.read_user import get_users, get_user_by_id
 
 def create_user(name, email):
     """Create user, use WriteUser model"""
@@ -26,6 +26,14 @@ def list_users(limit):
     """Get last X users, use ReadUser model"""
     try:
         return get_users(limit)
+    except Exception as e:
+        print(e)
+        return "Une erreur s'est produite lors de la requête de base de données. Veuillez consulter les logs pour plus d'informations."
+
+def get_user(user_id):
+    """Get user by ID, use ReadUser model"""
+    try:
+        return get_user_by_id(user_id)
     except Exception as e:
         print(e)
         return "Une erreur s'est produite lors de la requête de base de données. Veuillez consulter les logs pour plus d'informations."
