@@ -6,7 +6,7 @@ Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 
 from sqlalchemy import desc
 from models.product import Product
-from db import get_sqlalchemy_session
+from db import get_sqlalchemy_session, get_redis_conn
 
 def add_product(name: str, sku: str, price: float):
     """Insert product with items in MySQL"""
@@ -37,7 +37,9 @@ def delete_product_by_id(product_id: int):
         if product:
             session.delete(product)
             session.commit()
-            return 1  
+            # L'article n'existe plus : retirer son compteur de ventes du modèle de lecture
+            get_redis_conn().delete(f"product:{product_id}")
+            return 1
         else:
             return 0  
             
