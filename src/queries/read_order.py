@@ -33,7 +33,6 @@ def get_orders_from_redis(limit=9999):
             user_id=int(order_data.get('user_id', 0)),
             total_amount=float(order_data.get('total_amount', 0))
         ))
-    print(limit)
     return orders
 
 def get_highest_spending_users():

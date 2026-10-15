@@ -4,6 +4,7 @@ SPDX - License - Identifier: LGPL - 3.0 - or -later
 Auteurs : Gabriel C. Ullmann, Fabio Petrillo, 2025
 """
 from commands.write_order import sync_all_orders_to_redis
+from commands.write_product import add_product, delete_product_by_id
 from controllers.order_controller import create_order, remove_order
 from db import get_redis_conn
 from views.report_view import show_highest_spending_users, show_best_sellers
@@ -46,3 +47,31 @@ def test_report_best_sellers():
     assert "<ul>" in report_html
     assert "<li>" in report_html
     assert "Les articles les plus vendus" in report_html
+
+def test_remove_order_decrements_product_counter():
+    r = get_redis_conn()
+    before = int(r.get("product:1") or 0)
+
+    order_id = create_order(1, [{'product_id': 1, 'quantity': 3}])
+    assert int(r.get("product:1")) == before + 3
+
+    assert remove_order(int(order_id)) == 1
+    assert int(r.get("product:1")) == before
+
+def test_best_sellers_with_unknown_product():
+    # Compteur Redis d'un article qui n'existe plus dans MySQL
+    r = get_redis_conn()
+    r.set("product:999999", 2)
+    try:
+        report_html = show_best_sellers()
+        assert "Article #999999 : 2 vendus" in report_html
+    finally:
+        r.delete("product:999999")
+
+def test_delete_product_removes_redis_counter():
+    r = get_redis_conn()
+    product_id = add_product("Article temporaire", "TMP-001", 1.0)
+    r.set(f"product:{product_id}", 0)
+
+    assert delete_product_by_id(product_id) == 1
+    assert r.exists(f"product:{product_id}") == 0

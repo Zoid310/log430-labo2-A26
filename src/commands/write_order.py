@@ -82,12 +82,13 @@ def delete_order(order_id: int):
         order = session.query(Order).filter(Order.id == order_id).first()
         
         if order:
+            # Lire les articles avant la suppression, pour décrémenter les compteurs Redis
+            items = [(item.product_id, item.quantity) for item in order.order_items]
             session.delete(order)
             session.commit()
 
-            # TODO: supprimer la commande à Redis
-            delete_order_from_redis(order_id)
-            return 1  
+            delete_order_from_redis(order_id, items)
+            return 1
         else:
             return 0  
             
@@ -105,15 +106,17 @@ def add_order_to_redis(order_id, user_id, total_amount, items):
         "user_id": user_id,
         "total_amount": total_amount
     })
-    print(r)
     for item in items:
         r.incr(f"product:{int(item['product_id'])}", int(float(item['quantity'])))
 
-def delete_order_from_redis(order_id):
-    """Delete order from Redis"""
+def delete_order_from_redis(order_id, items=()):
+    """Delete order from Redis and decrease the sold quantity of its products"""
     r = get_redis_conn()
-    r.delete(f"order:{order_id}")
-    pass
+    pipeline = r.pipeline()
+    pipeline.delete(f"order:{order_id}")
+    for product_id, quantity in items:
+        pipeline.decr(f"product:{int(product_id)}", int(float(quantity)))
+    pipeline.execute()
 
 def sync_all_orders_to_redis():
     """ Sync orders from MySQL to Redis """
@@ -123,6 +126,10 @@ def sync_all_orders_to_redis():
     rows_added = 0
     try:
         if len(orders_in_redis) == 0:
+            # Repartir de zéro : sinon d'anciens compteurs product:* seraient comptés deux fois
+            stale_counters = r.keys("product:*")
+            if stale_counters:
+                r.delete(*stale_counters)
             # mysql
             orders_from_mysql = get_orders_from_mysql()
             for order in orders_from_mysql:
