@@ -22,7 +22,6 @@ def get_orders_from_mysql(limit=9999):
 
 def get_orders_from_redis(limit=9999):
     """Get last X orders"""
-    # TODO: écrivez la méthode
     r = get_redis_conn()
     keys = sorted(r.keys("order:*"), key=lambda k: int(k.split(":")[1]), reverse=True)[:limit]
     orders = []

@@ -64,7 +64,6 @@ def add_order(user_id: int, items: list):
 
         session.commit()
 
-        # TODO: ajouter la commande à Redis
         add_order_to_redis(order_id, user_id, total_amount, items)
 
         return order_id
