@@ -142,10 +142,11 @@ def sync_all_orders_to_redis():
                     r.incr(f"product:{item.product_id}", int(float(item.quantity)))
                 print(order)
             rows_added = len(orders_from_mysql)
+            r.close()
+            return len(orders_in_redis) + rows_added
         else:
             print('Redis already contains orders, no need to sync!')
     except Exception as e:
         print(e)
         return 0
-    finally:
-        return len(orders_in_redis) + rows_added
+    
