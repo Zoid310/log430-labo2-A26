@@ -146,6 +146,7 @@ def sync_all_orders_to_redis():
             return len(orders_in_redis) + rows_added
         else:
             print('Redis already contains orders, no need to sync!')
+            return len(orders_in_redis)
     except Exception as e:
         print(e)
         return 0
